@@ -3603,26 +3603,24 @@ namespace iSpyApplication
                 }
                 else
                 {
-                    Rectangle r = cameraControl.Camera.ViewRectangle;
-                    //map location to point in the view rectangle
-                    var ox =
-                        Convert.ToInt32((Convert.ToDouble(e.Location.X) / Convert.ToDouble(cameraControl.Width)) *
-                                        Convert.ToDouble(r.Width));
-                    var oy =
-                        Convert.ToInt32((Convert.ToDouble(e.Location.Y) / Convert.ToDouble(cameraControl.Height)) *
-                                        Convert.ToDouble(r.Height));
+                    var fold = cameraControl.Camera.ZFactor;
+                    var fnew = fold * (e.Delta > 0 ? 1.2f : 0.8f);
+                    if (fnew < 1)
+                        fnew = 1;
 
-                    cameraControl.Camera.ZPoint = new Point(r.Left + ox, r.Top + oy);
-                    var f = cameraControl.Camera.ZFactor;
-                    if (e.Delta > 0)
-                    {
-                        f += 0.2f;
-                    }
-                    else
-                        f -= 0.2f;
-                    if (f < 1)
-                        f = 1;
-                    cameraControl.Camera.ZFactor = f;
+                    Rectangle r = cameraControl.Camera.ViewRectangle;
+                    //map location to point in the view rectangle -> camera point of e
+                    var ex = r.Left + r.Width * Convert.ToDouble(e.Location.X) / Convert.ToDouble(cameraControl.Width);
+                    var ey = r.Top + r.Height * Convert.ToDouble(e.Location.Y) / Convert.ToDouble(cameraControl.Height);
+                    //actual camera point in center of view (may differ from cameraControl.Camera.ZPoint)
+                    var cx = Convert.ToDouble(r.Left + r.Right) / 2;
+                    var cy = Convert.ToDouble(r.Top + r.Bottom) / 2;
+                    //new camera point in center of view that, for the new zoom, calculates to the same camera point of e.
+                    var zx = ex - (ex - cx) * fold / fnew;
+                    var zy = ey - (ey - cy) * fold / fnew;
+
+                    cameraControl.Camera.ZPoint = new Point(Convert.ToInt32(zx), Convert.ToInt32(zy));
+                    cameraControl.Camera.ZFactor = fnew;
                 }
                 ((HandledMouseEventArgs)e).Handled = true;
 
@@ -3986,7 +3984,7 @@ namespace iSpyApplication
             }
         }
 
-        #endregion      
+        #endregion
 
         #region Nested type: clsCompareFileInfo
 

@@ -78,10 +78,10 @@ namespace iSpyApplication.Controls
                     value.X = 0;
                 if (value.Y < 0)
                     value.Y = 0;
-                if (value.X > Width)
-                    value.X = Width;
-                if (value.Y > Height)
-                    value.Y = Height;
+                if (value.X >= Width)
+                    value.X = Width - 1;
+                if (value.Y >= Height)
+                    value.Y = Height - 1;
                 _zPoint = value;
             }
         }
@@ -125,13 +125,13 @@ namespace iSpyApplication.Controls
         {
             get
             {
-                int newWidth = Convert.ToInt32(Width / ZFactor);
-                int newHeight = Convert.ToInt32(Height / ZFactor);
+                int newWidth = Math.Max(1, Convert.ToInt32(Width / ZFactor));
+                int newHeight = Math.Max(1, Convert.ToInt32(Height / ZFactor));
 
                 int left = ZPoint.X - newWidth / 2;
                 int top = ZPoint.Y - newHeight / 2;
-                int right = ZPoint.X + newWidth / 2;
-                int bot = ZPoint.Y + newHeight / 2;
+                int right = left + newWidth;
+                int bot = top + newHeight;
 
                 if (left < 0)
                 {

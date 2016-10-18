@@ -2900,9 +2900,12 @@ namespace iSpyApplication.Controls
             {
                 var d =
                     (Math.Sqrt(Math.Pow(PTZReference.X - _mouseLoc.X, 2) +
-                                Math.Pow(PTZReference.Y - _mouseLoc.Y, 2))) / 5;
+                                Math.Pow(PTZReference.Y - _mouseLoc.Y, 2))) / (5 * Camera.ZFactor);
 
-                var p = Camera.ZPoint;
+                //actual camera point in center of view (may differ from cameraControl.Camera.ZPoint)
+                Rectangle r = Camera.ViewRectangle;
+                Point p = new Point((r.Left + r.Right) / 2, (r.Top + r.Bottom) / 2);
+
                 p.X -= Convert.ToInt32(d * Math.Cos(angle));
                 p.Y -= Convert.ToInt32(d * Math.Sin(angle));
                 Camera.ZPoint = p;
