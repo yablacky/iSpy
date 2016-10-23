@@ -1518,11 +1518,11 @@ namespace iSpyApplication
                     {
                         if ((extcmd.Value ?? "") != "")
                         {
-                            lbExtended.Items.Add(new ListItem(subMenu + extcmd.Name, extcmd.Value));
+                            lbExtended.Items.Add(new ListItem(subMenu + extcmd.Name, extcmd.Value, extcmd.Confirm));
                         }
                         else if ((extcmd.Name ?? MainForm.PTZ_SUBMENU_END) != MainForm.PTZ_SUBMENU_END)
                         {
-                            lbExtended.Items.Add(new ListItem(subMenu + extcmd.Name + MainForm.PTZ_SUBMENU_NAME_SUFFIX, extcmd.Value));
+                            lbExtended.Items.Add(new ListItem(subMenu + extcmd.Name + MainForm.PTZ_SUBMENU_NAME_SUFFIX, extcmd.Value, extcmd.Confirm));
                             subMenu = subMenu + PTZ_SUBMENU_START;
                         }
                         else
@@ -1583,7 +1583,8 @@ namespace iSpyApplication
             if (lbExtended.SelectedIndex > -1)
             {
                 var li = ((ListItem) lbExtended.SelectedItem);
-                SendPtzCommand(li.Value);
+                if (MainForm.GetConfirmation(li.Confirm))
+                    SendPtzCommand(li.Value);
             }
         }
 
@@ -1850,12 +1851,14 @@ namespace iSpyApplication
         private struct ListItem
         {
             private readonly string _name;
+            internal readonly string Confirm;
             internal readonly string Value;
 
-            public ListItem(string name, string value)
+            public ListItem(string name, string value, string confirm = null)
             {
                 _name = name;
                 Value = value;
+                Confirm = confirm;
             }
             public override string ToString()
             {

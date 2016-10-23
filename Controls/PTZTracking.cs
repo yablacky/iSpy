@@ -54,7 +54,7 @@ namespace iSpyApplication.Controls
                     {
                         if ((extcmd.Value ?? "") != "")
                         {
-                            ddlHomeCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name, extcmd.Value));
+                            ddlHomeCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name, extcmd.Value, extcmd.Confirm));
                             if (CameraControl.Camobject.settings.ptzautohomecommand == extcmd.Value)
                             {
                                 ddlHomeCommand.SelectedIndex = ddlHomeCommand.Items.Count - 1;
@@ -62,7 +62,7 @@ namespace iSpyApplication.Controls
                         }
                         else if ((extcmd.Name ?? MainForm.PTZ_SUBMENU_END) != MainForm.PTZ_SUBMENU_END)
                         {
-                            ddlHomeCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name + MainForm.PTZ_SUBMENU_NAME_SUFFIX, extcmd.Value));
+                            ddlHomeCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name + MainForm.PTZ_SUBMENU_NAME_SUFFIX, extcmd.Value, extcmd.Confirm));
                             subMenu = subMenu + PTZ_SUBMENU_START;
                         }
                         else
@@ -128,7 +128,8 @@ namespace iSpyApplication.Controls
             if (ddlHomeCommand.SelectedIndex > -1)
             {
                 var li = ((MainForm.ListItem3)ddlHomeCommand.SelectedItem);
-                CameraControl.Camobject.settings.ptzautohomecommand = li.Value;
+                if (MainForm.GetConfirmation(li.Confirm))
+                    CameraControl.Camobject.settings.ptzautohomecommand = li.Value;
             }
 
             if (chkTrack.Checked)

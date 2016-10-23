@@ -34,9 +34,10 @@ namespace iSpyApplication.Controls
         {
             if (ddlScheduleCommand.SelectedIndex > -1)
             {
-                if (ddlScheduleCommand.SelectedIndex > -1)
+                var li = (MainForm.ListItem3) ddlScheduleCommand.SelectedItem;
+                if (MainForm.GetConfirmation(li.Confirm))
                 {
-                    var cmd = ddlScheduleCommand.SelectedItem.ToString();
+                    var cmd = li.ToString();
                     var time = dtpSchedulePTZ.Value;
                     var s = new objectsCameraPtzscheduleEntry { command = cmd, time = time };
                     List<objectsCameraPtzscheduleEntry> scheds = CameraControl.Camobject.ptzschedule.entries.ToList();
@@ -123,11 +124,11 @@ namespace iSpyApplication.Controls
                     {
                         if ((extcmd.Value ?? "") != "")
                         {
-                            ddlScheduleCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name, extcmd.Value));
+                            ddlScheduleCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name, extcmd.Value, extcmd.Confirm));
                         }
                         else if ((extcmd.Name ?? MainForm.PTZ_SUBMENU_END) != MainForm.PTZ_SUBMENU_END)
                         {
-                            ddlScheduleCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name + MainForm.PTZ_SUBMENU_NAME_SUFFIX, extcmd.Value));
+                            ddlScheduleCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name + MainForm.PTZ_SUBMENU_NAME_SUFFIX, extcmd.Value, extcmd.Confirm));
                             subMenu = subMenu + PTZ_SUBMENU_START;
                         }
                         else

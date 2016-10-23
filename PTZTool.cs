@@ -36,11 +36,11 @@ namespace iSpyApplication
                             {
                                 if ((extcmd.Value ?? "") != "")
                                 {
-                                    ddlExtended.Items.Add(new ListItem(subMenu + extcmd.Name, extcmd.Value));
+                                    ddlExtended.Items.Add(new ListItem(subMenu + extcmd.Name, extcmd.Value, extcmd.Confirm));
                                 }
                                 else if ((extcmd.Name ?? MainForm.PTZ_SUBMENU_END) != MainForm.PTZ_SUBMENU_END)
                                 {
-                                    ddlExtended.Items.Add(new ListItem(subMenu + extcmd.Name + MainForm.PTZ_SUBMENU_NAME_SUFFIX, extcmd.Value));
+                                    ddlExtended.Items.Add(new ListItem(subMenu + extcmd.Name + MainForm.PTZ_SUBMENU_NAME_SUFFIX, extcmd.Value, extcmd.Confirm));
                                     subMenu = subMenu + PTZ_SUBMENU_START;
                                 }
                                 else
@@ -111,8 +111,11 @@ namespace iSpyApplication
                 if (ddlExtended.SelectedIndex > 0)
                 {
                     var li = ((ListItem) ddlExtended.SelectedItem);
-                    CameraControl.PTZ.SendPTZCommand(li.Value);
-                    ddlExtended.SelectedIndex = 0;
+                    if (MainForm.GetConfirmation(li.Confirm))
+                    {
+                        CameraControl.PTZ.SendPTZCommand(li.Value);
+                        ddlExtended.SelectedIndex = 0;
+                    }
                 }
             }
         }
@@ -121,11 +124,13 @@ namespace iSpyApplication
         {
             private readonly string _name;
             internal readonly string Value;
+            internal readonly string Confirm;
 
-            public ListItem(string name, string value)
+            public ListItem(string name, string value, string confirm = null)
             {
                 _name = name;
                 Value = value;
+                Confirm = confirm;
             }
 
             public override string ToString()

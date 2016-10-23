@@ -1,5 +1,32 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PTZSettings2>
+  <Normalize>
+    <ExtendedCommands>
+      <Command Name="Goto" />
+      <Command Name="Position {1}">
+        <From Pattern="Go ?(?:to)? +(?:Preset|Position) *(\d+)" />
+        <From Pattern="Go ?to +(\d+)" />
+        <From Pattern="Position +(\d+)" />
+      </Command>
+      <Command Name=".." />
+      <Command Name="Save" />
+      <Command Name="Position {1}">
+        <From Pattern="(?:Set|Save) +(?:Preset|Position|)? *(\d+)" />
+      </Command>
+      <Command Name=".." />
+      <Command Name="Patrol" />
+      <Command Name="Horizontal{1}">
+        <From Pattern="(?:H|Horz|Horizon.*) Patrol(| on| off)" />
+      </Command>
+      <Command Name="Vertical{1}">
+        <From Pattern="(?:V|Vert|Vertic.*) Patrol(| on| off)" />
+      </Command>
+      <Command Name="Stop">
+        <From Pattern="(Patrol Stop|Stop Patrol)" />
+      </Command>
+      <Command Name=".." />
+    </ExtendedCommands>
+  </Normalize>
   <Camera id="0" AppendAuth="user=[USERNAME]&amp;pwd=[PASSWORD]">
     <Makes>
       <Make Name="Foscam" Model="FI8918W" />
@@ -6108,7 +6135,7 @@ copy or delete as many lines as you need.-->
       <Command Name="Stop vertical patrol">command=27</Command>
     </ExtendedCommands>
   </Camera>
-<Camera id="220">
+  <Camera id="220">
     <Makes>
       <Make Name="KaiCong" Model="SIP1602W" />
     </Makes>
@@ -6272,7 +6299,7 @@ copy or delete as many lines as you need.-->
       <Command Name="Go Preset 7">/cgi-bin/operator/ptzset?gotoserverpresetname=Preset7</Command>
     </ExtendedCommands>
   </Camera>
-<Camera id="224">
+  <Camera id="224">
     <Makes>
       <Make Name="Avacom" Model="H5060W" />
     </Makes>

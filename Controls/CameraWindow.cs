@@ -1800,6 +1800,7 @@ namespace iSpyApplication.Controls
                             {
                                 if ((extcmd.Value ?? "") != "")
                                 {
+                                    // No check for extcmd.Confirm here: its checked when added to ptzschedule.
                                     Calibrating = true;
                                     PTZ.SendPTZCommand(extcmd.Value);
                                 }

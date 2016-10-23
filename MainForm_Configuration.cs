@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 using iSpyApplication.Controls;
@@ -159,6 +160,14 @@ namespace iSpyApplication
                 }
                 return null;
             }
+        }
+
+        public static bool GetConfirmation(string text, string caption = null)
+        {
+            return string.IsNullOrEmpty(text) ||
+                MessageBox.Show(LocRm.TryGetString(text),
+                    caption ?? LocRm.GetString("Confirm"),
+                    MessageBoxButtons.OKCancel) == DialogResult.OK;
         }
 
         public static configuration Conf
@@ -1520,6 +1529,114 @@ namespace iSpyApplication
             }
         }
 
+        private static void NormalizePTZs(PTZSettings2 c)
+        {
+            if (c?.Normalize?.ExtendedCommands == null || _ptzs == null)
+                return;
+
+            foreach (PTZSettings2Camera ptz in _ptzs)
+            {
+                if (ptz?.ExtendedCommands?.Command == null)
+                    continue;
+                var oldCommands = ptz.ExtendedCommands.Command.ToList();
+                var newCommands = new List<PTZSettings2CameraExtendedCommandsCommand>();
+
+                foreach (var normcmd in c.Normalize.ExtendedCommands)
+                {
+                    if (normcmd.From == null)
+                    {
+                        var extracmd = new PTZSettings2CameraExtendedCommandsCommand();
+                        extracmd.Name = normcmd.Name;
+                        extracmd.Value = String.Empty;
+                        newCommands.Add(extracmd);
+                    }
+                    else if (oldCommands.Count() > 0)
+                    {
+                        foreach (var from in normcmd.From)
+                        {
+                            var pattern = from.Pattern;
+                            if (pattern == null)
+                                continue;   // was set to null because original pattern did not compile.
+                            if (!pattern.StartsWith("^"))
+                                from.Pattern = pattern = @"^\s*" + pattern;
+                            if (!pattern.EndsWith("$"))
+                                from.Pattern = pattern = pattern + @"\s*$";
+                            Regex include, exclude;
+                            try
+                            {
+                                include = new Regex(pattern, RegexOptions.IgnoreCase);
+                            }
+                            catch (Exception e)
+                            {
+                                MessageBox.Show(LocRm.GetString("PTZError")
+                                    + "\nNormalize > ExtendedCommands > Command: " + normcmd.Name
+                                    + "\nFrom Pattern: " + pattern
+                                    + "\nHint: " + e.Message, LocRm.GetString("Error"));
+                                from.Pattern = null;    // give message only once.
+                                continue;
+                            }
+                            try
+                            {
+                                exclude = from.ExcludePattern != null ? new Regex(from.ExcludePattern, RegexOptions.IgnoreCase) : null;
+                            }
+                            catch (Exception e)
+                            {
+                                MessageBox.Show(LocRm.GetString("PTZError")
+                                    + "\nNormalize > ExtendedCommands > Command: " + normcmd.Name
+                                    + "\nFrom ExcludePattern: " + from.ExcludePattern
+                                    + "\nHint: " + e.Message, LocRm.GetString("Error"));
+                                from.ExcludePattern = null;
+                                continue;
+                            }
+                            for (int idx = 0; idx < oldCommands.Count(); idx++)
+                            {
+                                var extcmd = oldCommands[idx];
+                                if (exclude != null && exclude.Match(extcmd.Name).Success)
+                                    continue;
+                                Match m = include.Match(extcmd.Name);
+                                if (!m.Success)
+                                    continue;
+                                string name = normcmd.Name;
+                                string confirm = string.IsNullOrEmpty(normcmd.Confirm) ? null : normcmd.Confirm;
+                                foreach (var gn in include.GetGroupNumbers())
+                                {
+                                    string replacement = m.Groups[gn].ToString();
+                                    Func<string, string> edit = txt => txt
+                                        .Replace("{" + gn.ToString() + "}"   , replacement)
+                                        .Replace("{" + gn.ToString() + ".UC}", replacement.ToUpper())
+                                        .Replace("{" + gn.ToString() + ".LC}", replacement.ToLower());
+
+                                    name = edit(name);
+                                    if (confirm != null)
+                                        confirm = edit(confirm);
+                                }
+                                if (confirm != null)
+                                    confirm = confirm.Replace("{*}", name);
+                                extcmd.Name = name;
+                                extcmd.Confirm = string.IsNullOrEmpty(extcmd.Confirm) ? confirm : (confirm ?? (name + " ?"));
+                                newCommands.Add(extcmd);
+                                oldCommands.RemoveAt(idx);
+                                idx--;
+                            }
+                        }
+                    }
+                }
+                newCommands.AddRange(oldCommands);
+                // Remove empty sub menues
+                for (int idx = newCommands.Count(); --idx >= 1;)
+                {
+                    if ( newCommands[idx - 0].Name == PTZ_SUBMENU_END &&
+                        (newCommands[idx - 0].Value ?? "") == "" &&
+                        (newCommands[idx - 1].Value ?? "") == "")
+                    {
+                        newCommands.RemoveAt(idx--);
+                        newCommands.RemoveAt(idx);
+                    }
+                }
+                ptz.ExtendedCommands.Command = newCommands.ToArray();
+            }
+        }
+
         private static void LoadPTZs(string path)
         {
             try
@@ -1538,10 +1655,13 @@ namespace iSpyApplication
                 }
 
                 _ptzs = c.Camera?.ToList() ?? new List<PTZSettings2Camera>();
+
+                NormalizePTZs(c);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                MessageBox.Show(LocRm.GetString("PTZError"), LocRm.GetString("Error"));
+                MessageBox.Show(LocRm.GetString("PTZError")
+                    + "\n\nHint: " + e.Message, LocRm.GetString("Error"));
             }
         }
 
@@ -3528,7 +3648,9 @@ namespace iSpyApplication
                                                         {
                                                             Text = extcmd.Name,
                                                             Tag =
-                                                                cameraControl.Camobject.id + "|" + extcmd.Value
+                                                                cameraControl.Camobject.id
+                                                                    + "|" + (extcmd.Confirm ?? "").Replace("|","~")
+                                                                    + "|" + extcmd.Value
                                                         };
                                     if ((extcmd.Value ?? "") != "")
                                     {
@@ -3586,8 +3708,11 @@ namespace iSpyApplication
             var cw = GetCameraWindow(camid);
             if (cw?.PTZ != null)
             {
-                cw.Calibrating = true;
-                cw.PTZ.SendPTZCommand(cfg[1]);
+                if (MainForm.GetConfirmation(cfg[1]))
+                {
+                    cw.Calibrating = true;
+                    cw.PTZ.SendPTZCommand(cfg[2]);
+                }
             }
         }
 
@@ -3990,11 +4115,13 @@ namespace iSpyApplication
         {
             internal readonly string Value;
             internal readonly string Name;
+            internal readonly string Confirm;
 
-            public ListItem3(string name, string value)
+            public ListItem3(string name, string value, string confirm = null)
             {
                 Name = name;
                 Value = value;
+                Confirm = confirm;
             }
 
             public override string ToString()

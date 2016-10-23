@@ -3,6 +3,36 @@
   <xs:element name="PTZSettings2">
     <xs:complexType>
       <xs:sequence>
+        <xs:element name="Normalize" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="ExtendedCommands">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Command" maxOccurs="unbounded" minOccurs="0">
+                      <xs:complexType mixed="true">
+                        <xs:sequence>
+                          <xs:element name="From" maxOccurs="unbounded" minOccurs="0">
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:string">
+                                  <xs:attribute type="xs:string" name="Pattern" use="required"/>
+                                  <xs:attribute type="xs:string" name="ExcludePattern" use="optional"/>
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                        <xs:attribute type="xs:string" name="Name" use="required"/>
+                        <xs:attribute type="xs:string" name="Confirm" use="optional"/>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
         <xs:element maxOccurs="unbounded" name="Camera">
           <xs:complexType mixed="true">
             <xs:sequence>
@@ -51,6 +81,7 @@
                         <xs:simpleContent>
                           <xs:extension base="xs:string">
                             <xs:attribute name="Name" type="xs:string" use="required" />
+                            <xs:attribute name="Confirm" type="xs:string" use="optional"/>
                           </xs:extension>
                         </xs:simpleContent>
                       </xs:complexType>
