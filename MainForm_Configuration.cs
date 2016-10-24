@@ -18,6 +18,18 @@ using iSpyApplication.Properties;
 using iSpyApplication.Utilities;
 using iSpyPRO.DirectShow;
 
+public partial class PTZSettings2CameraExtendedCommandsCommand
+{
+    public string InternalName;
+    public string SubMenuName;
+    public string FullName {
+        get
+        {
+            return string.IsNullOrEmpty(SubMenuName) ? Name : SubMenuName + iSpyApplication.MainForm.PTZ_SUBMENU_DELIMITER + Name;
+        }
+    }
+}
+
 namespace iSpyApplication
 {
     public partial class MainForm
@@ -45,6 +57,7 @@ namespace iSpyApplication
 
         public static string PTZ_SUBMENU_END = "..";
         public static string PTZ_SUBMENU_NAME_SUFFIX = " >>";
+        public static string PTZ_SUBMENU_DELIMITER = " > ";
 
         public static void ReloadColors()
         {
@@ -1541,6 +1554,28 @@ namespace iSpyApplication
                 var oldCommands = ptz.ExtendedCommands.Command.ToList();
                 var newCommands = new List<PTZSettings2CameraExtendedCommandsCommand>();
 
+                // Save the original command name as internal command name because
+                // this is used when storing and loading schedules etc. Check that this
+                // name is uniq within the camera definition.
+                var cmdNames = new Dictionary<string, int>();
+                foreach (var extcmd in oldCommands)
+                {
+                    extcmd.InternalName = extcmd.Name;
+                    int cnt;
+                    if (!cmdNames.TryGetValue(extcmd.Name, out cnt))
+                        cnt = 0;
+                    else if (cnt == 1 && extcmd.Name != PTZ_SUBMENU_END)
+                    {
+                        MessageBox.Show(LocRm.GetString("PTZError")
+                            + "\nCamera [id=" + ptz.id + "] ExtendedCommands > Command > Name not uniq: " + extcmd.Name,
+                            LocRm.GetString("Error"));
+                    }
+                    cmdNames[extcmd.Name] = cnt + 1;
+                }
+
+                // Replace command names by normalized command names thereby
+                // sort commands to normalized command order.
+                Regex placeholderRE = new Regex(@"{\d+(?:\.[^}]+)?}");
                 foreach (var normcmd in c.Normalize.ExtendedCommands)
                 {
                     if (normcmd.From == null)
@@ -1610,8 +1645,12 @@ namespace iSpyApplication
                                     if (confirm != null)
                                         confirm = edit(confirm);
                                 }
+                                name = placeholderRE.Replace(name, "");
                                 if (confirm != null)
+                                {
                                     confirm = confirm.Replace("{*}", name);
+                                    confirm = placeholderRE.Replace(confirm, "");
+                                }
                                 extcmd.Name = name;
                                 extcmd.Confirm = string.IsNullOrEmpty(extcmd.Confirm) ? confirm : (confirm ?? (name + " ?"));
                                 newCommands.Add(extcmd);
@@ -1622,17 +1661,39 @@ namespace iSpyApplication
                     }
                 }
                 newCommands.AddRange(oldCommands);
+
                 // Remove empty sub menues
-                for (int idx = newCommands.Count(); --idx >= 1;)
+                for (bool checkAgain = true; checkAgain;)
                 {
-                    if ( newCommands[idx - 0].Name == PTZ_SUBMENU_END &&
-                        (newCommands[idx - 0].Value ?? "") == "" &&
-                        (newCommands[idx - 1].Value ?? "") == "")
+                    checkAgain = false;
+                    for (int idx = newCommands.Count(); --idx >= 1;)
                     {
-                        newCommands.RemoveAt(idx--);
-                        newCommands.RemoveAt(idx);
+                        if ( newCommands[idx - 0].Name == PTZ_SUBMENU_END &&
+                            (newCommands[idx - 0].Value ?? "") == "" &&
+                             newCommands[idx - 1].Name != PTZ_SUBMENU_END &&
+                            (newCommands[idx - 1].Value ?? "") == "")
+                        {
+                            newCommands.RemoveAt(idx--);
+                            newCommands.RemoveAt(idx);
+                            checkAgain = true;
+                        }
                     }
                 }
+
+                // Setup sub menue names where a command resides. Used to build full command names.
+                var subMenues = new List<string>();
+                foreach (var extcmd in newCommands)
+                {
+                    extcmd.SubMenuName = String.Join(PTZ_SUBMENU_DELIMITER, subMenues);
+                    if ((extcmd.Value ?? "") == "")
+                    {
+                        if ((extcmd.Name ?? PTZ_SUBMENU_END) != PTZ_SUBMENU_END)
+                            subMenues.Add(extcmd.Name);
+                        else if (subMenues.Count() > 0)
+                            subMenues.RemoveAt(subMenues.Count() - 1);
+                    }
+                }
+
                 ptz.ExtendedCommands.Command = newCommands.ToArray();
             }
         }
@@ -4116,12 +4177,14 @@ namespace iSpyApplication
             internal readonly string Value;
             internal readonly string Name;
             internal readonly string Confirm;
+            internal readonly string InternalName;
 
-            public ListItem3(string name, string value, string confirm = null)
+            public ListItem3(string name, string value, string confirm = null, string internalName = null)
             {
                 Name = name;
                 Value = value;
                 Confirm = confirm;
+                InternalName = internalName ?? name;
             }
 
             public override string ToString()

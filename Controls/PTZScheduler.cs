@@ -37,7 +37,7 @@ namespace iSpyApplication.Controls
                 var li = (MainForm.ListItem3) ddlScheduleCommand.SelectedItem;
                 if (MainForm.GetConfirmation(li.Confirm))
                 {
-                    var cmd = li.ToString();
+                    var cmd = li.InternalName;
                     var time = dtpSchedulePTZ.Value;
                     var s = new objectsCameraPtzscheduleEntry { command = cmd, time = time };
                     List<objectsCameraPtzscheduleEntry> scheds = CameraControl.Camobject.ptzschedule.entries.ToList();
@@ -65,21 +65,26 @@ namespace iSpyApplication.Controls
             int i = lbPTZSchedule.SelectedIndex;
             if (i > -1)
             {
-                var s = CameraControl.Camobject.ptzschedule.entries.ToList().OrderBy(p => p.time).ToList();
-                var si = s[i];
-                var cr = new ConfigureRepeat { Interval = 60, Until = si.time };
+                var sCur = CameraControl.Camobject.ptzschedule.entries.ToList().OrderBy(p => p.time).ToList();
+                var cr = new ConfigureRepeat { Interval = 60, Until = sCur[i].time };
                 if (cr.ShowDialog(this) == DialogResult.OK)
                 {
-                    var dtUntil = cr.Until;
-                    var dtCurrent = si.time.AddSeconds(cr.Interval);
-                    while (dtCurrent.TimeOfDay < dtUntil.TimeOfDay)
+                    var sNew = new List<objectsCameraPtzscheduleEntry>();
+                    sNew.AddRange(sCur);
+                    foreach (int ii in lbPTZSchedule.SelectedIndices)
                     {
-                        s.Add(new objectsCameraPtzscheduleEntry { command = si.command, time = dtCurrent });
-                        dtCurrent = dtCurrent.AddSeconds(cr.Interval);
+                        var si = sCur[ii];
+                        var dtUntil = cr.Until;
+                        var dtCurrent = si.time.AddSeconds(cr.Interval);
+                        while (dtCurrent.TimeOfDay < dtUntil.TimeOfDay)
+                        {
+                            sNew.Add(new objectsCameraPtzscheduleEntry { command = si.command, time = dtCurrent });
+                            dtCurrent = dtCurrent.AddSeconds(cr.Interval);
+                        }
                     }
+                    CameraControl.Camobject.ptzschedule.entries = sNew.ToArray();
                 }
                 cr.Dispose();
-                CameraControl.Camobject.ptzschedule.entries = s.ToArray();
                 ShowPTZSchedule();
             }
             else
@@ -100,9 +105,15 @@ namespace iSpyApplication.Controls
             if (i > -1)
             {
                 var s = CameraControl.Camobject.ptzschedule.entries.ToList().OrderBy(p => p.time).ToList();
-                s.RemoveAt(i);
+                var indexes = new List<int>();
+                foreach (int ii in lbPTZSchedule.SelectedIndices)
+                    indexes.Add(ii);
+                foreach (int ii in indexes.OrderBy(p => -p))
+                    s.RemoveAt(ii);
                 CameraControl.Camobject.ptzschedule.entries = s.ToArray();
                 ShowPTZSchedule();
+                if (lbPTZSchedule.Items.Count > i)
+                    lbPTZSchedule.SelectedIndex = i;
             }
         }
 
@@ -124,11 +135,11 @@ namespace iSpyApplication.Controls
                     {
                         if ((extcmd.Value ?? "") != "")
                         {
-                            ddlScheduleCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name, extcmd.Value, extcmd.Confirm));
+                            ddlScheduleCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name, extcmd.Value, extcmd.Confirm, extcmd.InternalName));
                         }
                         else if ((extcmd.Name ?? MainForm.PTZ_SUBMENU_END) != MainForm.PTZ_SUBMENU_END)
                         {
-                            ddlScheduleCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name + MainForm.PTZ_SUBMENU_NAME_SUFFIX, extcmd.Value, extcmd.Confirm));
+                            ddlScheduleCommand.Items.Add(new MainForm.ListItem3(subMenu + extcmd.Name + MainForm.PTZ_SUBMENU_NAME_SUFFIX, extcmd.Value, extcmd.Confirm, extcmd.InternalName));
                             subMenu = subMenu + PTZ_SUBMENU_START;
                         }
                         else

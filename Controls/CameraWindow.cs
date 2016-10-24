@@ -1795,7 +1795,7 @@ namespace iSpyApplication.Controls
                         {
                             objectsCameraPtzscheduleEntry entry1 = entry;
                             PTZSettings2CameraExtendedCommandsCommand extcmd =
-                                ptz.ExtendedCommands?.Command?.FirstOrDefault(p => p.Name == entry1.command);
+                                ptz.ExtendedCommands?.Command?.FirstOrDefault(p => p.InternalName == entry1.command);
                             if (extcmd != null)
                             {
                                 if ((extcmd.Value ?? "") != "")
