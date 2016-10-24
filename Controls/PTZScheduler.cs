@@ -35,7 +35,7 @@ namespace iSpyApplication.Controls
             if (ddlScheduleCommand.SelectedIndex > -1)
             {
                 var li = (MainForm.ListItem3) ddlScheduleCommand.SelectedItem;
-                if (MainForm.GetConfirmation(li.Confirm))
+                if ((li.Value ?? "") != "" && MainForm.GetConfirmation(li.Confirm))
                 {
                     var cmd = li.InternalName;
                     var time = dtpSchedulePTZ.Value;
@@ -173,5 +173,6 @@ namespace iSpyApplication.Controls
             CameraControl.Camobject.ptzschedule.suspend = chkSuspendOnMovement.Checked;
             Close();
         }
+
     }
 }

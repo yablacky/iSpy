@@ -38,5 +38,11 @@ namespace iSpyApplication
             DialogResult = DialogResult.OK;
             Close();
         }
+
+        private void cancel_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
     }
 }

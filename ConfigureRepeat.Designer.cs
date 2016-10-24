@@ -38,6 +38,7 @@
             this.flowLayoutPanel3 = new System.Windows.Forms.FlowLayoutPanel();
             this.label2 = new System.Windows.Forms.Label();
             this.dtpSchedulePTZ = new System.Windows.Forms.DateTimePicker();
+            this.cancel = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.txtSeconds)).BeginInit();
             this.tableLayoutPanel1.SuspendLayout();
             this.flowLayoutPanel1.SuspendLayout();
@@ -69,11 +70,11 @@
             // 
             // button1
             // 
+            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.button1.AutoSize = true;
-            this.button1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.button1.Location = new System.Drawing.Point(160, 3);
+            this.button1.Location = new System.Drawing.Point(132, 3);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(32, 23);
+            this.button1.Size = new System.Drawing.Size(60, 23);
             this.button1.TabIndex = 78;
             this.button1.Text = "OK";
             this.button1.UseVisualStyleBackColor = true;
@@ -123,6 +124,7 @@
             // 
             this.tableLayoutPanel1.SetColumnSpan(this.flowLayoutPanel2, 2);
             this.flowLayoutPanel2.Controls.Add(this.button1);
+            this.flowLayoutPanel2.Controls.Add(this.cancel);
             this.flowLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowLayoutPanel2.Location = new System.Drawing.Point(3, 79);
             this.flowLayoutPanel2.Name = "flowLayoutPanel2";
@@ -160,6 +162,17 @@
             this.dtpSchedulePTZ.Size = new System.Drawing.Size(109, 20);
             this.dtpSchedulePTZ.TabIndex = 81;
             // 
+            // cancel
+            // 
+            this.cancel.AutoSize = true;
+            this.cancel.Location = new System.Drawing.Point(66, 3);
+            this.cancel.Name = "cancel";
+            this.cancel.Size = new System.Drawing.Size(60, 23);
+            this.cancel.TabIndex = 79;
+            this.cancel.Text = "Cancel";
+            this.cancel.UseVisualStyleBackColor = true;
+            this.cancel.Click += new System.EventHandler(this.cancel_Click);
+            // 
             // ConfigureRepeat
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -196,5 +209,6 @@
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel3;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.DateTimePicker dtpSchedulePTZ;
+        private System.Windows.Forms.Button cancel;
     }
 }
