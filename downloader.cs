@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Windows.Forms;
 using System.Xml;
+using System.Globalization;
 using iSpyApplication.Utilities;
 
 namespace iSpyApplication
@@ -12,7 +13,8 @@ namespace iSpyApplication
     {
         public string Url;
         public string SaveLocation;
-        public string Format;
+        public bool WithBackup = true;
+//        public string Format;
 
         private bool success;
         private bool aborting;
@@ -21,7 +23,6 @@ namespace iSpyApplication
         public downloader()
         {
             InitializeComponent();
-
         }
 
         private void downloader_Load(object sender, EventArgs e)
@@ -39,72 +40,108 @@ namespace iSpyApplication
             var request = WebRequest.Create(url);
             var response = request.GetResponse();
             // gets the size of the file in bytes
-            
-            Int64 iSize = response.ContentLength;
 
-            // keeps track of the total bytes downloaded so we can update the progress bar
-            int iRunningByteTotal = 0;
+            string backupLocation = null;
+            long iSize = response.ContentLength;
+            success = false;
 
             // use the webclient object to download the file
 
             using (Stream streamRemote = response.GetResponseStream())
             {
-                if (streamRemote != null)
+                if (streamRemote == null)
+                {
+                    Logger.LogErrorToFile("Response stream from " + Url + " failed");
+                }
+                else try
                 {
                     streamRemote.ReadTimeout = 8000;
-                    // loop the stream and get the file into the byte buffer
-                    var byteBuffer = new byte[iSize];
-                    int iByteSize;
-                    while ((iByteSize = streamRemote.Read(byteBuffer, iRunningByteTotal, byteBuffer.Length - iRunningByteTotal)) > 0 && !backgroundWorker1.CancellationPending)
+                    // read the stream in "byteBuffer" chunks and load the complete file in a memory stream
+                    var byteBuffer = new byte[(int)Math.Min(64 * 1024, iSize)];
+                    var ms = new MemoryStream((int)Math.Min(int.MaxValue, iSize));
+                    while (ms.Position < iSize && !backgroundWorker1.CancellationPending)
                     {
-                        iRunningByteTotal += iByteSize;
+                        int iByteSize = streamRemote.Read(byteBuffer, 0, byteBuffer.Length);
+                        if (iByteSize <= 0 || backgroundWorker1.CancellationPending)
+                            break;
+                        ms.Write(byteBuffer, 0, iByteSize);
 
+                        var total = ms.Position;
                         // calculate the progress out of a base "100"
-                        var dIndex = (double) (iRunningByteTotal);
-                        var dTotal = (double) byteBuffer.Length;
-                        var dProgressPercentage = (dIndex/dTotal);
+                        var dProgressPercentage = (double)total / (double)iSize;
                         var iProgressPercentage = (int) (dProgressPercentage*100);
 
                         // update the progress bar
                         backgroundWorker1.ReportProgress(iProgressPercentage);
-                        int total = iRunningByteTotal;
-                        UISync.Execute(() => lblProgress.Text = total + " / " + iSize);
+                        UISync.Execute(() => lblProgress.Text = total + " / " + iSize + " [" + iProgressPercentage + " %]");
                     }
                     if (!backgroundWorker1.CancellationPending)
                     {
                         if (SaveLocation.EndsWith(".xml"))
                         {
-                            var ms = new MemoryStream(byteBuffer);
+                            ms.Position = 0;
                             var doc = new XmlDocument();
-                            try
-                            {
-                                doc.Load(ms);
-                                doc.Save(SaveLocation);
-                                success = true;
-
-                            }
-                            catch (Exception ex)
-                            {
-                                success = false;
-                                Logger.LogExceptionToFile(ex);
-                                DialogResult = DialogResult.Cancel;
-                                aborting = true;
-                            }
-                            ms.Dispose();
+                            doc.Load(ms);
+                            // Only check if xml parser succeeds but save the originally formatted file instead.
+                            // doc.Save(SaveLocation);  // may reformat a little which makes it hard to detect changes.
                         }
+
+                        if (WithBackup && File.Exists(SaveLocation))
+                        {
+                            var tryBackupLocation = SaveLocation
+                                        + DateTime.Now.ToString(@"\#yyyy\-MM\-dd HH\-mm\-ss", CultureInfo.InvariantCulture);
+                            File.Move(SaveLocation, tryBackupLocation);
+                            backupLocation = tryBackupLocation;
+                        }
+
+                        ms.Position = 0;
+                        var file = new FileStream(SaveLocation, FileMode.Create, FileAccess.Write);
+                        ms.WriteTo(file);
+                        file.Close();
+                        success = true;
+                        Logger.LogMessageToFile("Downloaded file from " + Url + " to " + SaveLocation);
                     }
                     else
                     {
                         Logger.LogMessageToFile("Update cancelled");
                     }
+                    ms.Dispose();
                 }
-                else
+                catch (Exception ex)
                 {
-                    Logger.LogErrorToFile("Response stream from " + Url + " failed");
+                    success = false;
+                    Logger.LogExceptionToFile(ex, "Downloading file from " + Url + " to " + SaveLocation);
+                    DialogResult = DialogResult.Cancel;
+                    aborting = true;
                 }
             }
             response.Close();
-            
+            if (backupLocation != null && File.Exists(backupLocation))
+            {
+                if (success)
+                {
+                    Logger.LogMessageToFile("Saved old " + SaveLocation + " as " + backupLocation);
+                }
+                else
+                {
+                    try
+                    {
+                        File.Delete(SaveLocation);
+                    }
+                    catch
+                    {
+                    }
+                    try
+                    {
+                        File.Move(backupLocation, SaveLocation);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogExceptionToFile(ex, "Failed to restore " + SaveLocation + " from " + backupLocation) ;
+                    }
+                }
+            }
+
         }
 
         private class UISync
