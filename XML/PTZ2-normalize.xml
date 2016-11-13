@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PTZSettings2>
+  <Normalize>
+    <ExtendedCommands>
+      <Command Name="Goto" />
+      <Command Name="Position {1}">
+        <From Pattern="Go ?(?:to)? +(?:Preset|Position) *(\d+)" />
+        <From Pattern="Go ?to +(\d+)" />
+        <From Pattern="Position +(\d+)" />
+      </Command>
+      <Command Name=".." />
+
+      <Command Name="Save" />
+      <Command Name="Position {1}" Confirm="Save {*} ?">
+        <From Pattern="(?:Set|Save) +(?:Preset|Position|)? *(\d+)" />
+      </Command>
+      <Command Name=".." />
+
+      <Command Name="Patrol" />
+      <Command Name="Horizontal{1}">
+        <From Pattern="(?:H|Horz|Horizon.*) Patrol(| on| off)" />
+        <From Pattern="(Start|Stop) (?:H|Horz|Horizon.*) Patrol" />
+		<From Pattern="Pan Scan" />
+	  </Command>
+      <Command Name="Vertical{1}">
+        <From Pattern="(?:V|Vert|Vertic.*) Patrol(| on| off)" />
+        <From Pattern="(Start|Stop) (?:V|Vert|Vertic.*) Patrol" />
+		<From Pattern="Tilt Scan" />
+      </Command>
+      <Command Name="Stop">
+        <From Pattern="(Patrol Stop|Stop Patrol)" />
+      </Command>
+      <Command Name=".." />
+
+      <Command Name="Infrared" />
+	  <Command Name="IR Light {1.LC}">
+		<From Pattern="(?:|.* )IR(?: .*)? (on|off|manual|auto)" ExcludePattern="filter" />
+	  </Command>
+      <Command Name=".." />
+
+      <Command Name="Modes" />
+
+      <Command Name="Orientation" />
+	  <Command Name="No Transforms">
+		<From Pattern="No Transforms" />
+		<From Pattern="Video NO Flip" />
+	  </Command>
+      <Command Name="Flip">
+		<From Pattern="Flip" />
+		<From Pattern="Video H Flip" />
+	  </Command>
+      <Command Name="Mirror">
+		<From Pattern="Mirror" />
+		<From Pattern="Video V Flip" />
+	  </Command>
+      <Command Name="Flip And Mirror">
+		<From Pattern="Flip And Mirror" />
+		<From Pattern="Video H+V Flip" />
+	  </Command>
+      <Command Name=".." />
+
+	  <Command Name="Resolution" />
+	  <Command Name="Set Resolution {1}{2}">
+		<From Pattern=".*Resolution +(.*)" />
+        <From Pattern=".*Video Feed +([^()]*)(.*)" />
+	  </Command>
+	  <Command Name=".." />
+
+      <Command Name="Flicker Filter" />
+      <Command Name="OFF">
+		<From Pattern="AntiFlicker OFF" />
+	  </Command>
+      <Command Name="Reduce {1} Hz flicker" >
+        <From Pattern="AntiFlicker ON (\d+) *Hz" />
+        <From Pattern="Reduce (\d+) *Hz flicker" />
+	  </Command>
+	  <Command Name=".." />
+
+	  <Command Name=".." BackFrom="Modes"/>
+
+	  <Command Name="Other" />
+	  <Command Name="{0}">
+		<From Pattern=".*" />
+	  </Command>
+	  <Command Name=".." />
+
+	</ExtendedCommands>
+  </Normalize>
+</PTZSettings2>
+
+

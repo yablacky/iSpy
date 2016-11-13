@@ -285,6 +285,7 @@ internal static class Program
         var disource = new DirectoryInfo(AppPath + @"XML\");
 
         TryCopy(disource + @"PTZ2.xml", didest + @"PTZ2.xml", true);
+        TryCopy(disource + @"PTZ2-normalize.xml", didest + @"PTZ2-normalize.xml", false);
         TryCopy(disource + @"Translations.xml", didest + @"Translations.xml", true);
         TryCopy(disource + @"Sources.xml", didest + @"Sources.xml", true);
 

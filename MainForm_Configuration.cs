@@ -1700,6 +1700,8 @@ namespace iSpyApplication
 
         private static void LoadPTZs(string path)
         {
+            Logger.LogMessageToFile("Loading PTZ configuration: " + path);
+
             try
             {
                 var s = new XmlSerializer(typeof(PTZSettings2));
@@ -1716,6 +1718,29 @@ namespace iSpyApplication
                 }
 
                 _ptzs = c.Camera?.ToList() ?? new List<PTZSettings2Camera>();
+
+                // Try to load a separate file (which has "-normalize" appended to its filename).
+                // The <Normalize> information in this file overrides that from the configuration.
+                if (c != null && path.EndsWith(".xml") &&
+                    File.Exists(path = path.Remove(path.LastIndexOf('.')) + "-normalize.xml"))
+                {
+                    Logger.LogMessageToFile("Loading PTZ normalizer: " + path);
+
+                    PTZSettings2 n;
+                    using (var fs = new FileStream(path, FileMode.Open))
+                    {
+                        fs.Position = 0;
+                        using (TextReader reader = new StreamReader(fs))
+                        {
+                            n = (PTZSettings2)s.Deserialize(reader);
+                            reader.Close();
+                        }
+                        fs.Close();
+                    }
+                    if (c.Normalize != null && n.Normalize != null)
+                        Logger.LogMessageToFile("PTZ normalizer overrides configuration normalizer");
+                    c.Normalize = n.Normalize ?? c.Normalize;
+                }
 
                 NormalizePTZs(c);
             }
